@@ -33,6 +33,7 @@ const html = {
   },
 };
 
+//
 let matches = books;
 let page = 1;
 const range = [0, BOOKS_PER_PAGE];
@@ -54,6 +55,136 @@ const css = {
   },
 };
 
+// Initial theme setup (assuming you want to set the theme based on system preference)
+const initialTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+  ? "night"
+  : "day";
+html.settings.theme.value = initialTheme;
+document.documentElement.style.setProperty(
+  "--color-dark",
+  css[initialTheme].dark
+);
+document.documentElement.style.setProperty(
+  "--color-light",
+  css[initialTheme].light
+);
+
+// Function for the search button click event and search overlay
+const searchButtonClick = () => {
+  html.search.overlay.open = true;
+  html.search.title.focus();
+};
+
+// Function for the cancel search button click event and close search overlay
+const searchCancelClick = () => {
+  html.search.overlay.open = false;
+  html.search.form.reset();
+};
+
+// Function for the settings button click event and settings overlay
+const settingsButtonClick = () => {
+  html.settings.overlay.open = true;
+};
+
+// Function for the cancel settings button click event and close settings overlay
+const settingsCancelClick = () => {
+  html.settings.overlay.open = false;
+};
+
+// Function increases the current page number, appends new book previews to the list
+const listButtonClick = () => {
+  const nextPage = currentPage + 1;
+  currentPage = nextPage;
+  const startIndex = (currentPage - 1) * BOOKS_PER_PAGE;
+  const endIndex = currentPage * BOOKS_PER_PAGE;
+
+  html.list.items.appendChild(
+    createPreviewsFragment(matches, startIndex, endIndex)
+  );
+};
+
+const listItemClick = (event) => {
+  const pathArray = Array.from(event.path || event.composedPath());
+  let active;
+
+  //
+  for (const node of pathArray) {
+    if (active) break;
+
+    //
+    const previewId = node?.dataset?.preview;
+
+    //
+    if (!previewId) continue;
+
+    //
+    for (const singleBook of books) {
+      if (singleBook.id === previewId) {
+        active = singleBook;
+        break;
+      }
+    }
+  }
+
+  if (!active) return;
+
+  const { image, title, author, published, description } = active;
+
+  html.list.blur.src = image;
+  html.list.image.src = image;
+  html.list.title.innerText = title;
+  html.list.subtitle.innerText = `${authors[author]} (${new Date(
+    published
+  ).getFullYear()})`;
+  html.list.description.innerText = description;
+
+  html.list.overlay.open = true;
+};
+
+// Event listeners
+html.search.button.addEventListener("click", searchButtonClick);
+
+html.search.cancel.addEventListener("click", searchCancelClick);
+
+html.settings.button.addEventListener("click", settingsButtonClick);
+
+html.settings.cancel.addEventListener("click", settingsCancelClick);
+
+html.list.button.addEventListener("click", listButtonClick);
+
+html.list.items.addEventListener("click", listItemClick);
+
+// Initialize a variable to store the selected theme
+let selectedTheme;
+
+// Event listener for theme select dropdown
+html.settings.theme.addEventListener("change", () => {
+  // Store the selected theme in the variable, but do not apply it yet
+  selectedTheme = html.settings.theme.value;
+});
+
+// Event listener for the "Save" button click
+html.settings.form.addEventListener("submit", (event) => {
+  event.preventDefault(); // Prevent the form from submitting and reloading the page
+
+  // Check if a theme has been selected
+  if (selectedTheme) {
+    // Apply the selected theme
+    document.documentElement.style.setProperty(
+      "--color-dark",
+      css[selectedTheme].dark
+    );
+    document.documentElement.style.setProperty(
+      "--color-light",
+      css[selectedTheme].light
+    );
+  }
+
+  // Close the settings overlay or perform any other necessary actions
+  html.settings.overlay.open = false;
+});
+
+//TEMPLATE CODE
 // fragment = document.createDocumentFragment()
 // const extracted = books.slice(0, 36)
 
@@ -100,11 +231,6 @@ const css = {
 
 // data-search-authors.appendChild(authors)
 
-// data-settings-theme.value === window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day'
-// v = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches? 'night' | 'day'
-
-// documentElement.style.setProperty('--color-dark', css[v].dark);
-// documentElement.style.setProperty('--color-light', css[v].light);
 // data-list-button = "Show more (books.length - BOOKS_PER_PAGE)"
 
 // data-list-button.disabled = !(matches.length - [page * BOOKS_PER_PAGE] > 0)
@@ -183,11 +309,6 @@ const css = {
 //     const formData = new FormData(event.target)
 //     const result = Object.fromEntries(formData)
 
-//     document.documentElement.style.setProperty('--color-dark', css[result].dark);
-//     document.documentElement.style.setProperty('--color-light', css[result].light);
-//     html.settings.overlay.open = false
-// }
-
 //     if !active return
 //     data-list-active.open === true
 //     data-list-blur + data-list-image === active.image
@@ -196,89 +317,3 @@ const css = {
 //     data-list-subtitle === '${authors[active.author]} (${Date(active.published).year})'
 //     data-list-description === active.description
 // }
-
-// Function for the search button click event and search overlay
-const searchButtonClick = () => {
-  html.search.overlay.open = true;
-  html.search.title.focus();
-};
-
-// Function for the cancel search button click event and close search overlay
-const searchCancelClick = () => {
-  html.search.overlay.open = false;
-  html.search.form.reset();
-};
-
-// Function for the settings button click event and settings overlay
-const settingsButtonClick = () => {
-  html.settings.overlay.open = true;
-};
-
-// Function for the cancel settings button click event and close settings overlay
-const settingsCancelClick = () => {
-  html.settings.overlay.open = false;
-};
-
-// Function
-const listButtonClick = () => {
-  const nextPage = currentPage + 1;
-  currentPage = nextPage;
-  const startIndex = (currentPage - 1) * BOOKS_PER_PAGE;
-  const endIndex = currentPage * BOOKS_PER_PAGE;
-
-  html.list.items.appendChild(
-    createPreviewsFragment(matches, startIndex, endIndex)
-  );
-};
-
-//
-const listItemClick = (event) => {
-  const pathArray = Array.from(event.path || event.composedPath());
-  let active;
-
-  //
-  for (const node of pathArray) {
-    if (active) break;
-
-    //
-    const previewId = node?.dataset?.preview;
-
-    //
-    if (!previewId) continue;
-
-    //
-    for (const singleBook of books) {
-      if (singleBook.id === previewId) {
-        active = singleBook;
-        break;
-      }
-    }
-  }
-
-  if (!active) return;
-
-  const { image, title, author, published, description } = active;
-
-  html.list.blur.src = image;
-  html.list.image.src = image;
-  html.list.title.innerText = title;
-  html.list.subtitle.innerText = `${authors[author]} (${new Date(
-    published
-  ).getFullYear()})`;
-  html.list.description.innerText = description;
-
-  html.list.overlay.open = true;
-};
-
-// Event listeners
-html.search.button.addEventListener("click", searchButtonClick);
-
-html.search.cancel.addEventListener("click", searchCancelClick);
-
-html.settings.button.addEventListener("click", settingsButtonClick);
-
-html.settings.cancel.addEventListener("click", settingsCancelClick);
-
-html.list.button.addEventListener("click", listButtonClick);
-
-html.list.items.addEventListener("click", listItemClick);
